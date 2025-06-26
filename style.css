@@ -127,3 +127,11 @@ code {
 #aboutme {
   padding: 20px;
 }
+div.sticky {
+  position: sticky;
+  top: 0;
+}
+
+.img-circled {
+    border-radius: 300px;
+}

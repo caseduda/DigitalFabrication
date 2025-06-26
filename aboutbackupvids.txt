@@ -9,11 +9,11 @@
 <nav class="navbar navbar-expand-sm navbar-dark" style=" color: #EEE7E8;">
   <div style="align-items: center; justify-content: center;" class="container-fluid">
     <div class="flexrow">
-      <h2 class="nav-title">Phys S-12</h2>
+      <h2 class="nav-title">PS70 Fall 2024</h2>
     </div>
     <div class="navbar-nav">
-      <h4><a class="nav-link" href="./index.html" style="color: #000000;">Home</a></h4>
-      <h4><a class="nav-link" href="./about.html" style="color: #000000;">About</a></h4>
+      <h4><a class="nav-link" href="../index.html" style="color: #000000;">Home</a></h4>
+      <h4><a class="nav-link" href="../about.html" style="color: #000000;">About</a></h4>
     </div>
   </div>
 </nav>
@@ -30,7 +30,7 @@
 <div class="center-row">
   <img src="./about.jpg" class="center img-circled" alt="placeholder for you about me image" width="40%">
   <p id="aboutme">
-    Hello, my name is Case Duda, I'm a rising junior from Southeast Michigan. I enjoy playing tennis, watching soccer and F1 on tv and listening to music. I love playing my guitar, bass, and double bass. I also play my instruments in a band with some of my friends. astly, I compete in Science Olympiad and run my school's music improvisation club along with participating in many other clubs
+    Hello, my name is Case Duda, I'm a rising junior from Southeast Michigan. I enjoy playing tennis, watching soccer and F1 on tv and listening to music. I love playing my guitar, bass, and double bass. I also play my instruments in a band with some of my friends. Lastly, I compete in Science Olympiad and run my school's music improvisation club along with participating in many other clubs
   </p>
 </div>
 <br></br>
