@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><title>ESP32 OLED WebSocket</title></head>
+<body>
+  <h3>Send to ESP32 OLED</h3>
+  <input id="msg" type="text" placeholder="Type something..." />
+  <button onclick="sendMessage()">Send</button>
+
+  <script>
+    const socket = new WebSocket("ws://10.202.47.225/"); // Replace with your ESP32 IP
+
+    socket.onopen = () => console.log("WebSocket Connected");
+    socket.onerror = (e) => console.error("WebSocket error", e);
+    socket.onmessage = (e) => console.log("Received:", e.data);
+
+    function sendMessage() {
+      const msg = document.getElementById("msg").value;
+      socket.send(msg);
+    }
+  </script>
+</body>
+</html>

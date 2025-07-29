@@ -24,16 +24,193 @@
 <p class="margin">   </p>
 
 <h3>Week 9: Radio, WiFi, Bluetooth (IoT)</h3>
+<h4>For this assignment, I used a LAN server and a websocket to create a wireless connection.</h4>
+<h4>The microcontroller took inputted text and displayed it on an oled.</h4>
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/NsujrV6bgAQ?si=xfnr4ZsoaEas7Ucj" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<style>
+  pre {
+      color: #fff; /* White text */
+      padding: 15px;
+      border-radius: 5px;
+      max-width: 600px;
+      overflow-x: auto;
+      font-family: monospace;
+  }
+</style>
+<pre><code>
+#include <WiFi.h>
+#include <WebServer.h>
+#include <WebSocketsServer.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET    -1
+#define SCREEN_ADDRESS 0x3C
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+const char* ssid = "ESP32-AP";
+const char* password = "12345678";
+
+WebServer server(80);
+WebSocketsServer webSocket = WebSocketsServer(81);
+
+const int MAX_LINES = 6;
+String lines[MAX_LINES];
+
+const char* htmlPage = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ESP32 OLED</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+    input { padding: 10px; width: 200px; }
+    button { padding: 10px 20px; margin-left: 10px; }
+    #status { color: #555; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h3>Send to ESP32 OLED</h3>
+  <input id="msg" type="text" placeholder="Type something..." />
+  <button onclick="sendMessage()">Send</button>
+  <p id="status">Connecting...</p>
+
+  <script>
+    const statusElement = document.getElementById("status");
+    const msgInput = document.getElementById("msg");
+    let socket;
+
+    function initializeWebSocket() {
+      socket = new WebSocket("ws://" + window.location.hostname + ":81/");
+
+      socket.onopen = () => {
+        statusElement.textContent = "WebSocket connected";
+      };
+
+      socket.onerror = (e) => {
+        statusElement.textContent = "WebSocket error";
+        console.error("WebSocket error:", e);
+      };
+
+      socket.onclose = () => {
+        statusElement.textContent = "WebSocket closed. Reconnecting...";
+        setTimeout(initializeWebSocket, 2000);
+      };
+
+      socket.onmessage = (event) => {
+        console.log("Message from server:", event.data);
+      };
+    }
+
+    function sendMessage() {
+      const msg = msgInput.value.trim();
+      if (msg && socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(msg);
+        msgInput.value = ""; 
+      } else if (!socket || socket.readyState !== WebSocket.OPEN) {
+        alert("WebSocket not connected");
+      } else {
+        alert("Please enter a message");
+      }
+    }
+
+    window.onload = initializeWebSocket;
+  </script>
+</body>
+</html>
+)rawliteral";
+
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length);
+
+void setup() {
+  Serial.begin(115200);
+  Wire.begin(6, 7); 
 
 
-<p class="margin">   </p>
-<div class="flexrow">
-  <a id="btn" href="wk9.zip" download>Download my files from this week!
-  </a>
-</div>
-<p class="margin">   </p>
+  for (int i = 0; i < MAX_LINES; i++) {
+    lines[i] = "";
+  }
 
-<h4>Assignment: [Program something with IOT]</h4>
+  WiFi.softAP(ssid, password);
+  Serial.print("Access Point \"");
+  Serial.print(ssid);
+  Serial.println("\" started");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.softAPIP());
+
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println("OLED init failed");
+    while (true);
+  }
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+  display.println("Waiting...");
+  display.display();
+
+
+  server.on("/", HTTP_GET, []() {
+    server.send(200, "text/html", htmlPage);
+  });
+  server.begin();
+
+  webSocket.begin();
+  webSocket.onEvent(webSocketEvent);
+
+  Serial.println("Web server started");
+}
+
+void loop() {
+  server.handleClient();
+  webSocket.loop();
+}
+
+void addLine(String msg) {
+  for (int i = 0; i < MAX_LINES - 1; i++) {
+    lines[i] = lines[i + 1];
+  }
+  lines[MAX_LINES - 1] = msg;
+}
+
+void updateDisplay() {
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  for (int i = 0; i < MAX_LINES; i++) {
+    if (lines[i].length() > 0) {
+      display.println(lines[i]);
+    }
+  }
+  display.display();
+}
+
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length) {
+  if (type == WStype_TEXT) {
+    String msg = String((char*)payload, length);
+    msg.trim();
+    if (msg.length() > 0) {
+      Serial.printf("Received: %s\n", msg.c_str());
+      addLine(msg);
+      updateDisplay();
+    }
+  } else if (type == WStype_DISCONNECTED) {
+    Serial.printf("Client %u disconnected\n", num);
+  } else if (type == WStype_CONNECTED) {
+    Serial.printf("Client %u connected\n", num);
+  }
+}
+</code></pre>
+
+
+
 
 
 
